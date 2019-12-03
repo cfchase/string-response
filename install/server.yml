@@ -1,0 +1,153 @@
+apiVersion: v1
+kind: Template
+
+labels:
+  application: string-response
+
+metadata:
+  name: string-response
+
+parameters:
+  - name: APPLICATION_NAME
+    value: string-response
+    required: true
+  - name: CONFIG_MAP_NAME
+    value: string-response
+    required: true
+  - name: RESPONSE_STRING
+    value: Change This Response!
+    required: true
+  - name: REPLICAS
+    value: "1"
+    required: true
+  - name: HOST
+    value: string-response
+    required: true
+  - name: PORT
+    value: "8080"
+    required: true
+  - name: IP
+    value: "0.0.0.0"
+    required: true
+  - name: IMAGE_REPOSITORY
+    value: quay.io/cfchase/string-response:latest
+    required: true
+  - name: CONTAINER_REQUEST_CPU
+    value: 200m
+  - name: CONTAINER_REQUEST_MEMORY
+    value: 200Mi
+  - name: CONTAINER_LIMIT_CPU
+    value: 200m
+  - name: CONTAINER_LIMIT_MEMORY
+    value: 500Mi
+
+objects:
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: ${CONFIG_MAP_NAME}
+    data:
+      RESPONSE_STRING: ${RESPONSE_STRING}
+
+  - apiVersion: v1
+    kind: DeploymentConfig
+    metadata:
+      name: ${APPLICATION_NAME}
+      labels:
+        app: ${APPLICATION_NAME}
+    spec:
+      replicas: ${{REPLICAS}}
+      selector:
+        deploymentconfig: ${APPLICATION_NAME}
+      strategy:
+        type: Rolling
+      template:
+        metadata:
+          labels:
+            app: ${APPLICATION_NAME}
+            deploymentconfig: ${APPLICATION_NAME}
+        spec:
+          containers:
+            - env:
+                - name: IP
+                  value: "${IP}"
+                - name: PORT
+                  value: "${PORT}"
+              envFrom:
+                - configMapRef:
+                    name: ${SECRET_NAME}
+              image: ${IMAGE_REPOSITORY}
+              imagePullPolicy: Always
+              name: ${APPLICATION_NAME}
+              ports:
+                - containerPort: ${{PORT}}
+                  protocol: TCP
+              resources:
+                requests:
+                  cpu: ${CONTAINER_REQUEST_CPU}
+                  memory: ${CONTAINER_REQUEST_MEMORY}
+                limits:
+                  cpu: ${CONTAINER_LIMIT_CPU}
+                  memory: ${CONTAINER_LIMIT_MEMORY}
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: File
+              readinessProbe:
+                httpGet:
+                  path: /status
+                  port: 8080
+                  scheme: HTTP
+              livenessProbe:
+                httpGet:
+                  path: /status
+                  port: 8080
+                  scheme: HTTP
+                initialDelaySeconds: 60
+                periodSeconds: 30
+          dnsPolicy: ClusterFirst
+          restartPolicy: Always
+          schedulerName: default-scheduler
+          securityContext: {}
+          terminationGracePeriodSeconds: 30
+      test: false
+      triggers:
+        - type: ConfigChange
+
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: ${APPLICATION_NAME}
+      labels:
+        app: ${APPLICATION_NAME}
+    spec:
+      ports:
+        - name: ${{PORT}}-tcp
+          port: ${{PORT}}
+          protocol: TCP
+          targetPort: ${{PORT}}
+      selector:
+        deploymentconfig: ${APPLICATION_NAME}
+
+#  - apiVersion: v1
+#    kind: Route
+#    metadata:
+#      labels:
+#        app: ${APPLICATION_NAME}
+#      name: ${HOST}
+#    spec:
+#      port:
+#        targetPort: ${{PORT}}
+#      to:
+#        kind: Service
+#        name: ${APPLICATION_NAME}
+#      wildcardPolicy: None
+
+  - kind: Ingress
+    apiVersion: extensions/v1beta1
+    metadata:
+      labels:
+        app: ${APPLICATION_NAME}
+      name: ${HOST}
+    spec:
+      backend:
+        serviceName: ${APPLICATION_NAME}
+        servicePort: ${{PORT}}
