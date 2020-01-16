@@ -6,6 +6,10 @@ endif
 
 .DEFAULT_GOAL := build
 
+.PHONY: dev
+dev:
+	./install/dev.sh
+
 .PHONY: login
 login:
 	./install/login.sh

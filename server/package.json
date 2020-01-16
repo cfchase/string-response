@@ -10,7 +10,9 @@
   "keywords": [],
   "author": "cfchase",
   "license": "MIT",
-  "dependencies": {},
+  "dependencies": {
+    "pino": "^5.16.0"
+  },
   "devDependencies": {
     "nodemon": "^1.19.4",
     "pino-pretty": "^3.2.2"

@@ -20,7 +20,9 @@ parameters:
   - name: REPLICAS
     value: "1"
     required: true
-  - name: HOST
+  - name: LOG_LEVEL
+    value: debug
+  - name: ROUTE_NAME
     value: string-response
     required: true
   - name: PORT
@@ -73,9 +75,11 @@ objects:
                   value: "${IP}"
                 - name: PORT
                   value: "${PORT}"
+                - name: LOG_LEVEL
+                  value: "${LOG_LEVEL}"
               envFrom:
                 - configMapRef:
-                    name: ${SECRET_NAME}
+                    name: ${CONFIG_MAP_NAME}
               image: ${IMAGE_REPOSITORY}
               imagePullPolicy: Always
               name: ${APPLICATION_NAME}
@@ -94,15 +98,13 @@ objects:
               readinessProbe:
                 httpGet:
                   path: /status
-                  port: 8080
+                  port: ${{PORT}}
                   scheme: HTTP
               livenessProbe:
                 httpGet:
                   path: /status
-                  port: 8080
+                  port: ${{PORT}}
                   scheme: HTTP
-                initialDelaySeconds: 60
-                periodSeconds: 30
           dnsPolicy: ClusterFirst
           restartPolicy: Always
           schedulerName: default-scheduler
@@ -120,34 +122,34 @@ objects:
         app: ${APPLICATION_NAME}
     spec:
       ports:
-        - name: ${{PORT}}-tcp
+        - name: ${PORT}-tcp
           port: ${{PORT}}
           protocol: TCP
           targetPort: ${{PORT}}
       selector:
         deploymentconfig: ${APPLICATION_NAME}
 
-#  - apiVersion: v1
-#    kind: Route
+  - apiVersion: v1
+    kind: Route
+    metadata:
+      labels:
+        app: ${APPLICATION_NAME}
+      name: ${ROUTE_NAME}
+    spec:
+      port:
+        targetPort: ${{PORT}}
+      to:
+        kind: Service
+        name: ${APPLICATION_NAME}
+      wildcardPolicy: None
+
+#  - kind: Ingress
+#    apiVersion: extensions/v1beta1
 #    metadata:
 #      labels:
 #        app: ${APPLICATION_NAME}
 #      name: ${HOST}
 #    spec:
-#      port:
-#        targetPort: ${{PORT}}
-#      to:
-#        kind: Service
-#        name: ${APPLICATION_NAME}
-#      wildcardPolicy: None
-
-  - kind: Ingress
-    apiVersion: extensions/v1beta1
-    metadata:
-      labels:
-        app: ${APPLICATION_NAME}
-      name: ${HOST}
-    spec:
-      backend:
-        serviceName: ${APPLICATION_NAME}
-        servicePort: ${{PORT}}
+#      backend:
+#        serviceName: ${APPLICATION_NAME}
+#        servicePort: ${{PORT}}
