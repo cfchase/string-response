@@ -6,4 +6,4 @@ SOURCE_REPOSITORY_REF=${SOURCE_REPOSITORY_REF:-master}
 
 echo "Building ${IMAGE_REPOSITORY} from ${SOURCE_REPOSITORY_URL} on ${SOURCE_REPOSITORY_REF}"
 
-s2i build ${SOURCE_REPOSITORY_URL} --ref ${SOURCE_REPOSITORY_REF} --context-dir /server docker.io/nodeshift/centos7-s2i-nodejs:12.x ${IMAGE_REPOSITORY}
+s2i build ${SOURCE_REPOSITORY_URL} --ref ${SOURCE_REPOSITORY_REF} --context-dir /server registry.access.redhat.com/ubi8/nodejs-14 ${IMAGE_REPOSITORY}

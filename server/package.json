@@ -5,16 +5,10 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "LOG_LEVEL=trace NODE_ENV=development nodemon server.js | pino-pretty -t"
+    "dev": "LOG_LEVEL=trace NODE_ENV=development node server.js"
   },
   "keywords": [],
   "author": "cfchase",
   "license": "MIT",
-  "dependencies": {
-    "pino": "^5.16.0"
-  },
-  "devDependencies": {
-    "nodemon": "^1.19.4",
-    "pino-pretty": "^3.2.2"
-  }
+  "dependencies": {}
 }
